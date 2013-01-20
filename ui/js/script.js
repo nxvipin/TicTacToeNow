@@ -75,9 +75,12 @@ var BOARD = Backbone.View.extend({
 		this.listenTo(this.model, 'change', this.render);
 	},
 	el : $('#game'),
+	events: {'click .cell': function(X){
+		console.log('Clicked Cell: ',X.currentTarget.id);
+		this.model.move(parseInt(X.currentTarget.id[1]));
+	}},
 	render : function(){
 		console.log("render");
-		console.log(this.board_template(board=this.model.get_board() ));
 		this.$el.html( this.board_template(board=this.model.get_board() ) );
 		return this;
 	}
