@@ -1,5 +1,6 @@
 var TTT = Backbone.Model.extend({
 	defaults: {
+		play: true,
 		current_player: 'X',
 		board: ['*', '*', '*', '*', '*', '*', '*', '*', '*']
 	},
@@ -41,6 +42,13 @@ var TTT = Backbone.Model.extend({
 						});
 		return valid_moves;
 	},
+	check_valid_move: function(move){
+		if(this.get_valid_moves().indexOf(move)>=0){
+			return true;
+		} else {
+			return false;
+		}
+	},
 	toggle_current_player: function(){
 		cp = this.get_current_player();
 		np = "";
@@ -48,10 +56,10 @@ var TTT = Backbone.Model.extend({
 		this.update_current_player(np);
 		return true;
 	},
-	move: function(location){
-		if(this.get_valid_moves().indexOf(location)>=0){
+	move: function(move){
+		if(this.get('play') && this.check_valid_move(move)){
 			board = this.get('board');
-			board[location] = this.get_current_player();
+			board[move] = this.get_current_player();
 			this.set('board', board);
 			this.toggle_current_player();
 			return board;
@@ -60,6 +68,31 @@ var TTT = Backbone.Model.extend({
 			console.log("Invalid Move");
 			return {error: "Invalid Move"};
 		}
+	},
+	win: function(sym){
+		board = this.get_board();
+		if(
+			board[0] == sym && board[1] == sym && board[2] == sym ||
+			board[3] == sym && board[4] == sym && board[5] == sym ||
+			board[6] == sym && board[7] == sym && board[8] == sym ||
+			board[0] == sym && board[3] == sym && board[6] == sym ||
+			board[1] == sym && board[4] == sym && board[7] == sym ||
+			board[2] == sym && board[5] == sym && board[8] == sym ||
+			board[0] == sym && board[4] == sym && board[8] == sym ||
+			board[2] == sym && board[4] == sym && board[6] == sym){
+				return true;
+		} else {
+			return false;
+		}
+	},
+	over: function(){
+		board = this.get_board();
+		b = board.filter(function(X){ if(X=='*') return true;});
+		if(b.length==0){
+			return true;
+		} else{
+			return false;
+		}
 	}
 });
 
@@ -67,6 +100,12 @@ var succ = function(game){
 	console.log(game.get('current_player'));
 }
 var game = new TTT();
+game.on("change", function(){
+	console.log("Game Changes Captured");
+	if(this.win('X') || this.win('O') || this.over()){
+		this.set('play',false);
+	}
+});
 
 var BOARD = Backbone.View.extend({
 	board_template: _.template($('#board').html()),
