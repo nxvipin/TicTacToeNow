@@ -105,6 +105,9 @@ game.on("change", function(){
 	if(this.win('X') || this.win('O') || this.over()){
 		this.set('play',false);
 	}
+	if(this.hasChanged('play')){
+		console.log("Game Over!");
+	}
 });
 
 var BOARD = Backbone.View.extend({
