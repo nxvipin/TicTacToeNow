@@ -7,9 +7,21 @@
 		<script type='text/template' id='board'>
 			<div>
 				<table>
-				<tr><td><%= board[0] %></td><td><%= board[1] %></td><td><%= board[2] %></td></tr>
-				<tr><td><%= board[3] %></td><td><%= board[4] %></td><td><%= board[5] %></td></tr>
-				<tr><td><%= board[6] %></td><td><%= board[7] %></td><td><%= board[8] %></td></tr>
+				<tr>
+					<td class='cell' id='c0'><%= board[0] %></td>
+					<td class='cell' id='c1'><%= board[1] %></td>
+					<td class='cell' id='c2'><%= board[2] %></td>
+				</tr>
+				<tr>
+					<td class='cell' id='c3'><%= board[3] %></td>
+					<td class='cell' id='c4'><%= board[4] %></td>
+					<td class='cell' id='c5'><%= board[5] %></td>
+				</tr>
+				<tr>
+					<td class='cell' id='c6'><%= board[6] %></td>
+					<td class='cell' id='c7'><%= board[7] %></td>
+					<td class='cell' id='c8'><%= board[8] %></td>
+				</tr>
 				</table>
 			</div>
 		</script>
@@ -17,6 +29,6 @@
 	<body>
 		<div id='game'>
 		</div>
-		<script src='script.js' type='text/javascript' language='javascript' charset='utf-8'></script>
+		<script src='js/script.js' type='text/javascript' language='javascript' charset='utf-8'></script>
 	</body>
 </html>
