@@ -62,6 +62,9 @@ var TTT = Backbone.Model.extend({
 			board[move] = this.get_current_player();
 			this.set('board', board);
 			this.toggle_current_player();
+			if(this.win('X') || this.win('O') || this.over()){
+				this.set('play', false);
+			}
 			return board;
 		}
 		else{
@@ -96,25 +99,15 @@ var TTT = Backbone.Model.extend({
 	}
 });
 
-var succ = function(game){
-	console.log(game.get('current_player'));
-}
-var game = new TTT();
-game.on("change", function(){
-	console.log("Game Changes Captured");
-	if(this.win('X') || this.win('O') || this.over()){
-		this.set('play',false);
-	}
-	if(this.hasChanged('play')){
-		console.log("Game Over!");
-	}
-});
+var game = new TTT({player : player});
 
 var BOARD = Backbone.View.extend({
 	board_template: _.template($('#board').html()),
 	initialize : function() {
 		this.render();
-		this.listenTo(this.model, 'change', this.render);
+		this.listenTo(this.model, 'change', function(){
+			this.render();
+		});
 	},
 	el : $('#game'),
 	events: {'click .cell': function(X){
@@ -129,4 +122,32 @@ var BOARD = Backbone.View.extend({
 });
 
 var board_render = new BOARD({model: game});
+
+var MessageBoard = Backbone.View.extend({
+	scoreboard : _.template($('#messageboard').html()),
+	initialize: function(){
+		this.defaultrender();
+		this.listenTo(this.model, 'change', function(){
+			this.defaultrender();
+			if(this.model.win('X')){
+				this.render("Player X won!");
+			}
+			else if(this.model.win('O')){
+				this.render("Player O won!");
+			}
+			else if(this.model.over()){
+				this.render("Draw");
+			}
+		});
+	},
+	el: $('#message'),
+	defaultrender: function(){
+		this.$el.html( this.scoreboard(message="Current Player : "+this.model.get_current_player()));
+	},
+	render: function(msg){
+		this.$el.html( this.scoreboard(message=msg));
+	}
+});
+
+var player = new MessageBoard({model:game});
 
