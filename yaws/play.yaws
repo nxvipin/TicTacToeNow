@@ -1,0 +1,14 @@
+<erl>
+
+out(A) ->
+    H = A#arg.headers,
+    C = H#headers.cookie,
+    case yaws_api:find_cookie_val("player", C) of
+        [] ->
+            Now = calendar:local_time(),
+            yaws_api:setcookie("player_id", base64:encode(crypto:strong_rand_bytes(40)), "/");
+        PlayerID ->
+            {html, f("Player : ~p",[PlayerID])}
+    end.
+
+</erl>
