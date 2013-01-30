@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 
 % Application API
--export([start/1, add_player/2]).
+-export([start/1, add_player/2, move/2, get_state/1]).
 
 % Gen Server Callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -15,17 +15,26 @@
 				next_player = "X",
 				board=["*", "*", "*", "*", "*", "*", "*", "*", "*"]}).
 
-start(Player) ->
-	start({Player, true});
+% API Definition
 start({Player, true}) ->
 	gen_server:start_link(?MODULE, [{Player, true}], []);
 start({Player, false}) ->
 	gen_server:start_link(?MODULE, [{Player, false}], []);
+start(Player) ->
+	start({Player, true}).
 
-add_player(PID, Player) ->
-	gen_server:call(PID, {add_player, Player}).
+add_player(Server, Player) ->
+	gen_server:call(Server, {add_player, Player}).
 
 
+move(Server, {Player, Move}) ->
+	gen_server:call(Server, {move, Player, Move}).
+
+get_state(Server) ->
+	gen_server:call(Server, get_state).
+
+
+% Gen Server Callbacks
 init([{Player, Start}]) ->
 	State = case Start of
 				true -> #game{player1 = Player};
@@ -42,6 +51,22 @@ handle_call({add_player, Player}, _From, State) ->
 			true -> State
 		end,
 	{reply, {ok, State}, S};
+handle_call({move, Player, Move}, _From, State) ->
+	Board = State#game.board,
+	Next_Player_Symbol = State#game.next_player,
+	Is_Valid_Move = board_check_valid_move(Board, Move),
+	Next_Player_Id = Player,
+	PlayerID = board_get_id_from_symbol(State, Next_Player_Symbol),
+	if 
+		Is_Valid_Move and (PlayerID == Next_Player_Id) ->
+			B = board_move(Board, Next_Player_Symbol, Move),
+			N = other(Next_Player_Symbol),
+			{reply, {ok, "Success"}, State#game{next_player=N, board=B}};
+		true ->
+			{reply, {error, [PlayerID, Next_Player_Id]}, State}
+	end;
+handle_call(get_state, _From, State) ->
+	{reply, {ok, State}, State}.
 
 handle_cast(_Msg, State) ->
 	{noreply, State}.
@@ -55,3 +80,44 @@ terminate(_R, _S) ->
 code_change(_Old, State, _Extra) ->
 	{ok, State}.
 
+
+% Helper Functions
+board_check_valid_move(Board,Move) ->
+	lists:nth(Move, Board) == "*".
+
+board_valid_moves(Board) ->
+	{Valid_Moves,_} = lists:partition(fun(X) -> board_check_valid_move(Board,X) end,lists:seq(1,9)),
+	Valid_Moves.
+
+board_check_win(Board, S) ->
+	case Board of
+		[S,_,_,S,_,_,S,_,_] -> true;
+		[_,S,_,_,S,_,_,S,_] -> true;
+		[_,_,S,_,_,S,_,_,S] -> true;
+		[S,S,S,_,_,_,_,_,_] -> true;
+		[_,_,_,S,S,S,_,_,_] -> true;
+		[_,_,_,_,_,_,S,S,S] -> true;
+		[S,_,_,_,S,_,_,_,S] -> true;
+		[_,_,S,_,S,_,S,_,_] -> true;
+		_ -> false
+	end.
+
+board_check_full(Board) ->
+	not lists:any(fun(X) -> X == ' ' end, Board).
+
+other(Player) ->
+	if	Player == "X" -> "O";
+		Player == "O" -> "X"
+	end.
+
+board_move(Board, Player, Move) ->
+	{Head, Tail} = lists:split(Move-1,Board),
+	lists:append([Head,[Player],lists:nthtail(1,Tail)]).
+
+board_get_id_from_symbol(State, Symbol) ->
+	if
+		Symbol == "X" ->
+			State#game.player1;
+		true ->
+			State#game.player2
+	end.
