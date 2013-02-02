@@ -1,0 +1,16 @@
+<erl>
+	out(A) ->
+		H = A#arg.headers,
+		C = H#headers.cookie,
+		case yaws_api:find_cookie_val("username", C) of
+			[] ->
+				case yaws_api:postvar(A, "username") of
+					undefined ->
+						{redirect, "/index.yaws"};
+					{ok, U} ->
+						[{html ,f("Hello, ~p",[U])},yaws_api:setcookie("username",U,"/")]
+				end;
+			Cookie ->
+				{html,f("Hello ~p",[Cookie])}
+		end.
+</erl>
