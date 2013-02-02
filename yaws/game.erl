@@ -7,10 +7,12 @@
 % Gen Server Callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
-% Player1 always plays 'X'
-% Player2 always plays 'O'
-% Next_Player is either 'X' or 'O'
--record(game, {	player1 = none,
+% play is true if the game can continue and false if the game ends.
+% player1 always plays 'X'
+% player2 always plays 'O'
+% next_player is either 'X' or 'O'
+-record(game, {	play = true,
+				player1 = none,
 				player2 = none,
 				next_player = "X",
 				board=["*", "*", "*", "*", "*", "*", "*", "*", "*"]}).
@@ -50,20 +52,31 @@ handle_call({add_player, Player}, _From, State) ->
 			Player2 == none -> State#game{player2 = Player};
 			true -> State
 		end,
-	{reply, {ok, State}, S};
+	{reply, {ok, S}, S};
 handle_call({move, Player, Move}, _From, State) ->
 	Board = State#game.board,
+	Play = State#game.play,
 	Next_Player_Symbol = State#game.next_player,
 	Is_Valid_Move = board_check_valid_move(Board, Move),
 	Next_Player_Id = Player,
 	PlayerID = board_get_id_from_symbol(State, Next_Player_Symbol),
 	if 
-		Is_Valid_Move and (PlayerID == Next_Player_Id) ->
+		Is_Valid_Move and (PlayerID == Next_Player_Id) and Play ->
 			B = board_move(Board, Next_Player_Symbol, Move),
 			N = other(Next_Player_Symbol),
-			{reply, {ok, "Success"}, State#game{next_player=N, board=B}};
+			Full = board_check_full(B),
+			WinX = board_check_win(B, "X"),
+			WinO = board_check_win(B, "O"),
+			if
+				Full or WinX or WinO ->
+					PlayNext = false;
+				true ->
+					PlayNext = true
+			end,
+			S = State#game{play= PlayNext, next_player=N, board=B},
+			{reply, {ok, S}, S};
 		true ->
-			{reply, {error, [PlayerID, Next_Player_Id]}, State}
+			{reply, {error, [Is_Valid_Move, PlayerID, Next_Player_Id, Play]}, State}
 	end;
 handle_call(get_state, _From, State) ->
 	{reply, {ok, State}, State}.
@@ -103,7 +116,7 @@ board_check_win(Board, S) ->
 	end.
 
 board_check_full(Board) ->
-	not lists:any(fun(X) -> X == ' ' end, Board).
+	not lists:any(fun(X) -> X == "*" end, Board).
 
 other(Player) ->
 	if	Player == "X" -> "O";
