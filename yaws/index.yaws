@@ -1,0 +1,22 @@
+<erl>
+	out(A) ->
+		H = A#arg.headers,
+		C = H#headers.cookie,
+		case yaws_api:find_cookie_val("username", C) of
+			[] ->
+				ok;
+			Cookie ->
+				{redirect, "/start.yaws"}
+		end.
+</erl>
+<html>
+	<head>
+		<title>TicTacToeNow</title>
+	</head>
+	<body>
+		<form action='/start.yaws' method='post'>
+			<label>Username : </label><input type='text' name='username'>
+			<input type='submit'>
+		</form>
+	</body>
+</html>
