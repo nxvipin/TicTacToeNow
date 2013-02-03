@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 
 % Application API
--export([start/0, new_game/1, add_player/1, waiting_list/0, stop/1]).
+-export([start/0, new_game/1, add_player/1, waiting_list/0, stop/0]).
 
 % Gen Server Callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -28,15 +28,18 @@ init([]) ->
 	{ok, ets:new(game_sessions, [set])}.
 
 handle_call({new_game, User}, _From, State) ->
-	{ok, Game} = game:new(User),
-	{reply, {ok, {Game, waiting}}, ets:insert(State, {Game, waiting})};
+	{ok, Game} = game:start(User),
+	ets:insert(State, {Game, waiting}),
+	{reply, {ok, {Game, waiting}}, State};
 
 handle_call({add_player, Game, User}, _From, State) ->
 	{ok, _} = game:add_player(Game, User),
-	{reply, {ok, {Game, playing}, ets:insert(State, {Game, playing})};
+	ets:insert(State, {Game, playing}),
+	{reply, {ok, {Game, playing}}, State};
 
 handle_call(waiting_list, _From, State) ->
-	[ Game || {Game, S} <- ets:match_object(State, {'_', waiting}].
+	W = [ Game || {Game, _S} <- ets:match_object(State, {'_', waiting})],
+	{reply, {ok, W}, State}.
 
 handle_cast(stop, State) ->
 	ets:delete(State),
