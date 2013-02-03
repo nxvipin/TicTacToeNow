@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 
 % Application API
--export([start/0, new_game/1, add_player/1, waiting_list/0, stop/0]).
+-export([start/0, new_game/1, add_player/2, waiting_list/0, stop/0]).
 
 % Gen Server Callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -15,8 +15,8 @@ start() ->
 new_game(User) ->
 	gen_server:call(?GAME_SERVER, {new_game, User}).
 
-add_player(User) ->
-	gen_server:call(?GAME_SERVER, {add_player, User}).
+add_player(Game, User) ->
+	gen_server:call(?GAME_SERVER, {add_player, Game, User}).
 
 waiting_list() ->
 	gen_server:call(?GAME_SERVER, waiting_list).
