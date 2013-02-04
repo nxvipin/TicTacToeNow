@@ -1,6 +1,8 @@
 -module(game).
 -behaviour(gen_server).
 
+-define(GEM, game_event_manager).
+
 % Application API
 -export([start/1, add_player/2, move/2, get_state/1, stop/1]).
 
@@ -19,14 +21,20 @@
 
 % API Definition
 start({Player, true}) ->
-	gen_server:start_link(?MODULE, [{Player, true}], []);
+	{ok, PID} = gen_server:start_link(?MODULE, [{Player, true}], []),
+	gen_event:notify(?GEM, {new_game, PID}),
+	{ok, PID};
 start({Player, false}) ->
-	gen_server:start_link(?MODULE, [{Player, false}], []);
+	{ok, PID} = gen_server:start_link(?MODULE, [{Player, false}], []),
+	gen_event:notify(?GEM, {new_game, PID}),
+	{ok, PID};
 start(Player) ->
 	start({Player, true}).
 
 add_player(Server, Player) ->
-	gen_server:call(Server, {add_player, Player}).
+	R = gen_server:call(Server, {add_player, Player}),
+	gen_event:notify(?GEM, {add_player, Server}),
+	R.
 
 
 move(Server, {Player, Move}) ->
@@ -36,7 +44,9 @@ get_state(Server) ->
 	gen_server:call(Server, get_state).
 
 stop(Server) ->
-	gen_server:cast(Server, stop).
+	gen_server:cast(Server, stop),
+	gen_event:notify(?GEM, {game_stop,Server}),
+	ok.
 
 % Gen Server Callbacks
 init([{Player, Start}]) ->
